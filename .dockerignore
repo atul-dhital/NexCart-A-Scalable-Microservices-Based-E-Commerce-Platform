@@ -1,0 +1,17 @@
+**/node_modules
+**/.env
+**/.env.*
+!.env.example
+**/__tests__
+.git
+.github
+.npm-cache
+.cache
+graphify-out
+coverage
+tests
+node_modules
+.aws
+.agents
+.codex
+.kube

@@ -1,0 +1,173 @@
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    image: ${IMAGE_PREFIX:-ecommerce}/user-service:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+      MONGO_URI: ${MONGO_URI_USERS:?Set MONGO_URI_USERS in .env}
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    image: ${IMAGE_PREFIX:-ecommerce}/product-service:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+      MONGO_URI: ${MONGO_URI_PRODUCTS:?Set MONGO_URI_PRODUCTS in .env}
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+  shopping-cart-service:
+    build:
+      context: .
+      dockerfile: shopping-cart-service/Dockerfile
+    image: ${IMAGE_PREFIX:-ecommerce}/shopping-cart-service:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+      MONGO_URI: ${MONGO_URI_CART:?Set MONGO_URI_CART in .env}
+      PRODUCT_SERVICE_URI: http://product-service:5001
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5002/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    image: ${IMAGE_PREFIX:-ecommerce}/order-service:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+      MONGO_URI: ${MONGO_URI_ORDER:?Set MONGO_URI_ORDER in .env}
+      PRODUCT_SERVICE_URI: http://product-service:5001
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5003/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    image: ${IMAGE_PREFIX:-ecommerce}/payment-service:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+      MONGO_URI: ${MONGO_URI_PAYMENT:?Set MONGO_URI_PAYMENT in .env}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY in .env}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?Set STRIPE_WEBHOOK_SECRET in .env}
+      ORDER_SERVICE_URI: http://order-service:5003
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5004/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    image: ${IMAGE_PREFIX:-ecommerce}/notification-service:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+      NODEMAILER_EMAIL: ${NODEMAILER_EMAIL:?Set NODEMAILER_EMAIL in .env}
+      NODEMAILER_PASSWORD: ${NODEMAILER_PASSWORD:?Set NODEMAILER_PASSWORD in .env}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:?Set TWILIO_ACCOUNT_SID in .env}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:?Set TWILIO_AUTH_TOKEN in .env}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:?Set TWILIO_PHONE_NUMBER in .env}
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5005/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+  mongo:
+    image: mongo:8.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes: ["mongo-data:/data/db"]
+    networks: [ecommerce-network]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ping:1}).ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  mongo-init:
+    image: mongo:8.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks: [ecommerce-network]
+    restart: "no"
+    entrypoint: ["mongosh", "--host", "mongo:27017", "--quiet", "--eval"]
+    command:
+      - |
+        try { rs.status(); } catch (e) { if (e.codeName === "NotYetInitialized") { rs.initiate({_id:"rs0",members:[{_id:0,host:"mongo:27017"}]}); } else { throw e; } }
+        let ready=false; for(let i=0;i<120;i++){ if(db.hello().isWritablePrimary){ready=true;break;} sleep(500); } if(!ready) quit(1);
+  nginx:
+    image: nginx:stable-alpine
+    ports: ["80:80"]
+    volumes: ["./nginx.conf:/etc/nginx/nginx.conf:ro"]
+    restart: unless-stopped
+    networks: [ecommerce-network]
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      shopping-cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+volumes:
+  mongo-data:
+networks:
+  ecommerce-network:
+    driver: bridge

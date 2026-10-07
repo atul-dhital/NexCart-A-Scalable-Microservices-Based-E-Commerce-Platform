@@ -1,0 +1,5 @@
+require("dotenv").config()
+const start = require("../shared/start")
+const app = require("./app")
+const mongoose = require("mongoose")
+start({ app, port: 5004, mongoose, models: [require("./models/payment"), require("./models/event")], recover: require("./services/payments").recover, required: ["MONGO_URI", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"] }).catch((err) => { console.error(err.message); process.exit(1) })

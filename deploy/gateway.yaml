@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-gateway
+  template:
+    metadata:
+      labels:
+        app: ecommerce-gateway
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:stable-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          readinessProbe:
+            tcpSocket:
+              port: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: '1'
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: ecommerce-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-gateway
+spec:
+  selector:
+    app: ecommerce-gateway
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP

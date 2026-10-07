@@ -1,0 +1,102 @@
+services:
+  user-service:
+    image: ${IMAGE_PREFIX}/user-service:${IMAGE_TAG}
+    networks: [ecommerce-network]
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      MONGO_URI: ${MONGO_URI_USERS}
+  product-service:
+    image: ${IMAGE_PREFIX}/product-service:${IMAGE_TAG}
+    networks: [ecommerce-network]
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      MONGO_URI: ${MONGO_URI_PRODUCTS}
+  shopping-cart-service:
+    image: ${IMAGE_PREFIX}/shopping-cart-service:${IMAGE_TAG}
+    networks: [ecommerce-network]
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      MONGO_URI: ${MONGO_URI_CART}
+      PRODUCT_SERVICE_URI: http://product-service:5001
+  order-service:
+    image: ${IMAGE_PREFIX}/order-service:${IMAGE_TAG}
+    networks: [ecommerce-network]
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      MONGO_URI: ${MONGO_URI_ORDER}
+      PRODUCT_SERVICE_URI: http://product-service:5001
+  payment-service:
+    image: ${IMAGE_PREFIX}/payment-service:${IMAGE_TAG}
+    networks: [ecommerce-network]
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      MONGO_URI: ${MONGO_URI_PAYMENT}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      ORDER_SERVICE_URI: http://order-service:5003
+  notification-service:
+    image: ${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}
+    networks: [ecommerce-network]
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN}
+      NODEMAILER_EMAIL: ${NODEMAILER_EMAIL}
+      NODEMAILER_PASSWORD: ${NODEMAILER_PASSWORD}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+  nginx:
+    image: nginx:stable-alpine
+    ports: ["80:80"]
+    configs:
+      - source: nginx-conf
+        target: /etc/nginx/nginx.conf
+    networks: [ecommerce-network]
+configs:
+  nginx-conf:
+    name: ecommerce-nginx-${IMAGE_TAG}
+    file: ./nginx.conf
+networks:
+  ecommerce-network:
+    driver: overlay

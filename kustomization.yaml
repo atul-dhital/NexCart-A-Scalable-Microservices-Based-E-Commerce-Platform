@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deploy/configmap.yaml
+  - user-service/deployment.yaml
+  - user-service/service.yaml
+  - product-service/deployment.yaml
+  - product-service/service.yaml
+  - shopping-cart-service/deployment.yaml
+  - shopping-cart-service/service.yaml
+  - order-service/deployment.yaml
+  - order-service/service.yaml
+  - payment-service/deployment.yaml
+  - payment-service/service.yaml
+  - notification-service/deployment.yaml
+  - notification-service/service.yaml
+  - deploy/gateway.yaml
+configMapGenerator:
+  - name: ecommerce-gateway
+    files:
+      - nginx.conf

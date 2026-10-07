@@ -1,0 +1,25 @@
+{
+  "name": "scalable-ecommerce-backend",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node scripts/test.js",
+    "test:integration": "node --test --test-concurrency=1 tests/integration/system.test.js tests/integration/config.test.js",
+    "build": "node scripts/build.js",
+    "audit": "node scripts/audit.js",
+    "demo": "node scripts/demo.js"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "11.3.0",
+    "supertest": "7.3.1",
+    "yaml": "2.9.1"
+  },
+  "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "5.4.3"
+    }
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

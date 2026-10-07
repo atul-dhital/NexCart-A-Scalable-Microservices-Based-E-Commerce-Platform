@@ -1,0 +1,5 @@
+require("dotenv").config()
+const start = require("../shared/start")
+const app = require("./app")
+const mongoose = require("mongoose")
+start({ app, port: 5002, mongoose, models: [require("./models/cart")], required: ["MONGO_URI"] }).catch((err) => { console.error(err.message); process.exit(1) })

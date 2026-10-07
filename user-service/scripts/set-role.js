@@ -1,0 +1,11 @@
+require("dotenv").config()
+const mongoose = require("mongoose")
+const User = require("../models/user")
+;(async () => {
+  const [email, role] = process.argv.slice(2)
+  if (!email || !["customer", "admin"].includes(role)) throw new Error("Usage: node scripts/set-role.js <email> <customer|admin>")
+  await mongoose.connect(process.env.MONGO_URI)
+  const user = await User.findOneAndUpdate({ email: email.trim().toLowerCase() }, { role }, { returnDocument: "after", runValidators: true })
+  if (!user) throw new Error("User not found")
+  console.log(`Role updated to ${role}; sign in again to obtain a new token`)
+})().catch((err) => { console.error(err.message); process.exitCode = 1 }).finally(() => mongoose.disconnect())

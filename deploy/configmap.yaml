@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-config
+data:
+  PRODUCT_SERVICE_URI: http://product-service:5001
+  ORDER_SERVICE_URI: http://order-service:5003

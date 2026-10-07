@@ -1,0 +1,35 @@
+name: Deploy to Kubernetes
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Published immutable commit SHA
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: ecommerce-production-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.image_tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - uses: azure/setup-kubectl@v4
+      - name: Deploy immutable images and runtime configuration
+        run: node scripts/deploy-k8s.js
+        env:
+          KUBE_CONFIG_BASE64: ${{ secrets.KUBE_CONFIG_BASE64 }}
+          APP_ENV: ${{ secrets.APP_ENV }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_PREFIX: ${{ secrets.DOCKER_USERNAME }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          DEPLOY_NAMESPACE: ecommerce

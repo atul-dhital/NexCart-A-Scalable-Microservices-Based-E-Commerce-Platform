@@ -1,0 +1,35 @@
+name: Deploy to Docker Swarm
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Published immutable commit SHA
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: ecommerce-production-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, ecommerce-swarm-manager]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.image_tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Deploy on real Swarm manager
+        run: node scripts/deploy-swarm.js
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          IMAGE_PREFIX: ${{ secrets.DOCKER_USERNAME }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+      - if: always()
+        run: docker logout
